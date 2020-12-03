@@ -154,6 +154,7 @@ BEGIN_DATADESC( CNPC_Manhack )
 #else
 	DEFINE_FIELD( m_bHackedByAlyx,			FIELD_BOOLEAN),
 #endif
+	DEFINE_KEYFIELD(m_bHackedByTraitors, FIELD_BOOLEAN, "TraitorHack"),
 	DEFINE_FIELD( m_vecLoiterPosition,		FIELD_POSITION_VECTOR),
 	DEFINE_FIELD( m_fTimeNextLoiterPulse,	FIELD_TIME),
 
@@ -246,14 +247,16 @@ CNPC_Manhack::~CNPC_Manhack()
 Class_T	CNPC_Manhack::Classify(void)
 {
 #ifdef EZ1
-	return CLASS_MANHACK; // Manhacks are always CLASS_MANHACK in EZ1
-#else
-	return ( m_bHeld||m_bHackedByAlyx ) ? CLASS_PLAYER_ALLY : CLASS_MANHACK; 
+	if (m_bHackedByTraitors)
+	{
+		return CLASS_PLAYER_ALLY; // To who wrote the comment below: No they're not
+	}
+	else
+	{
+		return CLASS_MANHACK; // Manhacks are always CLASS_MANHACK in EZ1
+	}
 #endif
-
 }
-
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Turns the manhack into a physics corpse when dying.
@@ -2405,7 +2408,24 @@ void CNPC_Manhack::Spawn(void)
 		SetMoveType( MOVETYPE_VPHYSICS );
 	}
 
-	m_iHealth			= sk_manhack_health.GetFloat();
+	if (m_bHackedByTraitors)
+	{
+		m_iHealth = 50;
+	}
+	else
+	{
+		m_iHealth = sk_manhack_health.GetFloat();
+	}
+
+	if (m_bHackedByTraitors)
+	{
+		m_nSkin = 1;
+	}
+	else
+	{
+		m_nSkin = 0;
+	}
+
 	SetViewOffset( Vector(0, 0, 10) );		// Position of the eyes relative to NPC's origin.
 	m_flFieldOfView		= VIEW_FIELD_FULL;
 	m_NPCState			= NPC_STATE_NONE;
@@ -3371,6 +3391,14 @@ void CNPC_Manhack::SetEyeState( int state )
 				m_pEyeGlow->SetScale( 0.15f, 0.1f );
 				m_pEyeGlow->SetBrightness( 164, 0.1f );
 				m_pEyeGlow->m_nRenderFX = kRenderFxStrobeFast;
+
+				if ( m_pEyeGlow, m_bHackedByTraitors )
+				{
+					m_pEyeGlow->SetColor( 255, 247, 0 );
+					m_pEyeGlow->SetScale( 0.15f, 0.1f );
+					m_pEyeGlow->SetBrightness( 164, 0.1f );
+					m_pEyeGlow->m_nRenderFX = kRenderFxStrobeFast;
+				}
 			}
 			
 			if ( m_pLightGlow )
@@ -3379,6 +3407,14 @@ void CNPC_Manhack::SetEyeState( int state )
 				m_pLightGlow->SetScale( 0.15f, 0.1f );
 				m_pLightGlow->SetBrightness( 164, 0.1f );
 				m_pLightGlow->m_nRenderFX = kRenderFxStrobeFast;
+
+				if ( m_pLightGlow, m_bHackedByTraitors )
+				{
+					m_pLightGlow->SetColor( 255, 247, 0 );
+					m_pLightGlow->SetScale( 0.15f, 0.1f );
+					m_pLightGlow->SetBrightness( 164, 0.1f );
+					m_pLightGlow->m_nRenderFX = kRenderFxStrobeFast;
+				}
 			}
 
 			EmitSound("NPC_Manhack.Stunned");
@@ -3400,6 +3436,11 @@ void CNPC_Manhack::SetEyeState( int state )
 #endif
 				{
 					m_pEyeGlow->SetColor( 255, 0, 0 );
+
+					if ( m_pEyeGlow, m_bHackedByTraitors )
+					{
+						m_pEyeGlow->SetColor( 255, 94, 0 );
+					}
 				}
 
 				m_pEyeGlow->SetScale( 0.25f, 0.5f );
@@ -3418,6 +3459,11 @@ void CNPC_Manhack::SetEyeState( int state )
 #endif
 				{
 					m_pLightGlow->SetColor( 255, 0, 0 );
+
+					if ( m_pLightGlow, m_bHackedByTraitors )
+					{
+						m_pLightGlow->SetColor( 255, 94, 0 );
+					}
 				}
 
 				m_pLightGlow->SetScale( 0.25f, 0.5f );
@@ -3429,6 +3475,43 @@ void CNPC_Manhack::SetEyeState( int state )
 		}
 #ifdef EZ
 	case MANHACK_EYE_STATE_CHASE:
+	{
+		if ( m_pEyeGlow )
+		{
+			//Toggle our state
+			m_pEyeGlow->SetColor( 0, 255, 255 );
+			m_pEyeGlow->SetScale( 0.25f, 0.5f );
+			m_pEyeGlow->SetBrightness( 164, 0.1f );
+			m_pEyeGlow->m_nRenderFX = kRenderFxNone;
+
+			if ( m_pEyeGlow, m_bHackedByTraitors )
+			{
+				m_pEyeGlow->SetColor( 255, 136, 0 );
+				m_pEyeGlow->SetScale( 0.25f, 0.5f );
+				m_pEyeGlow->SetBrightness( 164, 0.1f );
+				m_pEyeGlow->m_nRenderFX = kRenderFxNone;
+			}
+		}
+
+		if ( m_pLightGlow )
+		{
+			m_pLightGlow->SetColor( 0, 255, 255 );
+			m_pLightGlow->SetScale( 0.25f, 0.5f );
+			m_pLightGlow->SetBrightness( 164, 0.1f );
+			m_pLightGlow->m_nRenderFX = kRenderFxNone;
+
+			if ( m_pLightGlow, m_bHackedByTraitors )
+			{
+				m_pLightGlow->SetColor( 255, 136, 0 );
+				m_pLightGlow->SetScale( 0.25f, 0.5f );
+				m_pLightGlow->SetBrightness( 164, 0.1f );
+				m_pLightGlow->m_nRenderFX = kRenderFxNone;
+			}
+		}
+
+		break;
+	}
+
 	case MANHACK_EYE_STATE_IDLE:
 	#ifdef EZ2
 	if( !m_bHackedByAlyx )
@@ -3441,6 +3524,14 @@ void CNPC_Manhack::SetEyeState( int state )
 			m_pEyeGlow->SetScale( 0.25f, 0.5f );
 			m_pEyeGlow->SetBrightness( 164, 0.1f );
 			m_pEyeGlow->m_nRenderFX = kRenderFxNone;
+
+			if ( m_pEyeGlow, m_bHackedByTraitors )
+			{
+				m_pEyeGlow->SetColor( 255, 204, 0 );
+				m_pEyeGlow->SetScale( 0.25f, 0.5f );
+				m_pEyeGlow->SetBrightness( 164, 0.1f );
+				m_pEyeGlow->m_nRenderFX = kRenderFxNone;
+			}
 		}
 
 		if ( m_pLightGlow )
@@ -3449,6 +3540,14 @@ void CNPC_Manhack::SetEyeState( int state )
 			m_pLightGlow->SetScale( 0.25f, 0.5f );
 			m_pLightGlow->SetBrightness( 164, 0.1f );
 			m_pLightGlow->m_nRenderFX = kRenderFxNone;
+
+			if ( m_pLightGlow, m_bHackedByTraitors )
+			{
+				m_pLightGlow->SetColor( 255, 204, 0 );
+				m_pLightGlow->SetScale( 0.25f, 0.5f );
+				m_pLightGlow->SetBrightness( 164, 0.1f );
+				m_pLightGlow->m_nRenderFX = kRenderFxNone;
+			}
 		}
 
 		break;

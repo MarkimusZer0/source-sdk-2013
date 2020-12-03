@@ -267,7 +267,6 @@ void CNPC_PlayerCompanion::Spawn()
 	BaseClass::Spawn();
 }
 
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 int CNPC_PlayerCompanion::Restore( IRestore &restore )
@@ -655,10 +654,6 @@ void CNPC_PlayerCompanion::BuildScheduleTestBits()
 	if (IsCurSchedule(SCHED_RANGE_ATTACK1) ||
 		IsCurSchedule(SCHED_BACK_AWAY_FROM_ENEMY) ||
 		IsCurSchedule(SCHED_RUN_FROM_ENEMY)
-#ifdef EZ // Melee attack conditions should also interrupt reloads
-		|| IsCurSchedule(SCHED_RELOAD) ||
-		IsCurSchedule(SCHED_HIDE_AND_RELOAD)
-#endif
 		)
 	{
 		SetCustomInterruptCondition(COND_CAN_MELEE_ATTACK1);
@@ -1128,36 +1123,103 @@ int CNPC_PlayerCompanion::TranslateSchedule( int scheduleType )
 
 	case SCHED_ESTABLISH_LINE_OF_FIRE:
 	case SCHED_MOVE_TO_WEAPON_RANGE:
-		if ( IsMortar( GetEnemy() ) )
+		if (IsMortar(GetEnemy()))
+		{
 			return SCHED_TAKE_COVER_FROM_ENEMY;
+		}
 		break;
 
 	case SCHED_CHASE_ENEMY:
-		if ( IsMortar( GetEnemy() ) )
+		if (IsMortar(GetEnemy()))
+		{
 			return SCHED_TAKE_COVER_FROM_ENEMY;
-		if ( GetEnemy() && FClassnameIs( GetEnemy(), "npc_combinegunship" ) )
+		}
+
+		if (GetEnemy() && FClassnameIs(GetEnemy(), "npc_combinegunship"))
+		{
 			return SCHED_ESTABLISH_LINE_OF_FIRE;
+		}
 		break;
 
 	case SCHED_ESTABLISH_LINE_OF_FIRE_FALLBACK:
 		// If we're fighting a gunship, try again
-		if ( GetEnemy() && FClassnameIs( GetEnemy(), "npc_combinegunship" ) )
+		if (GetEnemy() && FClassnameIs(GetEnemy(), "npc_combinegunship"))
+		{
 			return SCHED_ESTABLISH_LINE_OF_FIRE;
+		}
 		break;
 
 	case SCHED_RANGE_ATTACK1:
-		if ( IsMortar( GetEnemy() ) )
+		if (IsMortar(GetEnemy()))
+		{
 			return SCHED_TAKE_COVER_FROM_ENEMY;
-			
-		if ( GetShotRegulator()->IsInRestInterval() )
-			return SCHED_STANDOFF;
+		}
 
-		if( !OccupyStrategySlotRange( SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2 ) )
+		if (GetShotRegulator()->IsInRestInterval())
+		{
 			return SCHED_STANDOFF;
+		}
+		if (!OccupyStrategySlotRange(SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2))
+		{
+			return SCHED_STANDOFF;
+		}
 		break;
+
+	case SCHED_RELOAD:
+		if (HasCondition(COND_CAN_MELEE_ATTACK1))
+		{
+			return SCHED_MELEE_ATTACK1;
+		}
+
+	case SCHED_HIDE_AND_RELOAD:
+		if (HasCondition(COND_CAN_MELEE_ATTACK1))
+		{
+			return SCHED_MELEE_ATTACK1;
+		}
+
 	case SCHED_MELEE_ATTACK1:
-		if(!HasCondition(COND_NO_PRIMARY_AMMO))
-			return SCHED_PC_MELEE_AND_MOVE_AWAY;
+		if (HasCondition(COND_NO_PRIMARY_AMMO))
+		{
+			if (HasCondition(COND_SEE_ENEMY))
+			{
+				if (HasCondition(COND_ENEMY_UNREACHABLE))
+				{
+					return SCHED_RELOAD;
+				}
+			}
+		}
+
+		if (HasCondition(COND_NO_PRIMARY_AMMO))
+		{
+			if (HasCondition(COND_LIGHT_DAMAGE))
+			{
+				return SCHED_MELEE_ATTACK1;
+			}
+		}
+
+		if (HasCondition(COND_LOW_PRIMARY_AMMO))
+		{
+			if (HasCondition(COND_LIGHT_DAMAGE))
+			{
+				return SCHED_MELEE_ATTACK1;
+			}
+		}
+
+		if (HasCondition(COND_NO_PRIMARY_AMMO))
+		{
+			if (HasCondition(COND_HEAVY_DAMAGE))
+			{
+				return SCHED_BACK_AWAY_FROM_ENEMY;
+			}
+		}
+
+		if (HasCondition(COND_LOW_PRIMARY_AMMO))
+		{
+			if (HasCondition(COND_HEAVY_DAMAGE))
+			{
+				return SCHED_BACK_AWAY_FROM_ENEMY;
+			}
+		}
 		break;
 	case SCHED_FAIL_TAKE_COVER:
 		if ( IsEnemyTurret() )

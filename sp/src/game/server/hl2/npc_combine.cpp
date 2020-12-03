@@ -175,6 +175,7 @@ DEFINE_FIELD( m_vecTossVelocity, FIELD_VECTOR ),
 DEFINE_FIELD( m_hForcedGrenadeTarget, FIELD_EHANDLE ),
 DEFINE_FIELD( m_bShouldPatrol, FIELD_BOOLEAN ),
 DEFINE_FIELD( m_bFirstEncounter, FIELD_BOOLEAN ),
+DEFINE_KEYFIELD( m_bAllyCop, FIELD_BOOLEAN, "allymetrocop"),
 DEFINE_FIELD( m_flNextPainSoundTime, FIELD_TIME ),
 #ifdef EZ
 DEFINE_FIELD( m_flNextRegenSoundTime, FIELD_TIME),
@@ -297,7 +298,14 @@ void CNPC_Combine::Use(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 //-----------------------------------------------------------------------------
 bool CNPC_Combine::IsCommandable()
 {
-	return HasSpawnFlags(SF_COMBINE_COMMANDABLE) || BaseClass::IsCommandable();
+	if (m_bAllyCop)
+	{
+		return true;
+	}
+	else
+	{
+		return HasSpawnFlags(SF_COMBINE_COMMANDABLE) || BaseClass::IsCommandable();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -616,7 +624,14 @@ bool CNPC_Combine::CreateComponents()
 	if ( !BaseClass::CreateComponents() )
 		return false;
 
-	m_Sentences.Init( this, "NPC_Combine.SentenceParameters" );
+	if (m_bAllyCop)
+	{
+		m_Sentences.Init(this, "NPC_MetroPolice.SentenceParameters");
+	}
+	else
+	{
+		m_Sentences.Init(this, "NPC_Combine.SentenceParameters");
+	}
 	return true;
 }
 
@@ -1173,7 +1188,14 @@ bool CNPC_Combine::OverrideMoveFacing( const AILocalMoveGoal_t &move, float flIn
 //-----------------------------------------------------------------------------
 Class_T	CNPC_Combine::Classify ( void )
 {
-	return CLASS_COMBINE;
+	if (m_bAllyCop)
+	{
+		return CLASS_METROPOLICE;
+	}
+	else
+	{
+		return CLASS_COMBINE;
+	}
 }
 
 
@@ -1323,9 +1345,25 @@ EyeGlow_t * CNPC_Combine::GetEyeGlowData(int i)
 	string_t iszModel_Elite = AllocPooledString("models/combine_super_soldier.mdl");
 	string_t iszModel_PrisonGuard = AllocPooledString("models/combine_soldier_prisonguard.mdl");
 	string_t iszModel_RegularSoldier = AllocPooledString("models/combine_soldier.mdl");
+	string_t iszModel_AllyCop = AllocPooledString("models/police.mdl");
+	if ("models/police.mdl")
+	{
+		m_nSkin = random->RandomInt(0, 1);
+	}
 	string_t iszModelName = GetModelName();
 
-	if (iszModelName == iszModel_RegularSoldier)
+	if (iszModelName == iszModel_AllyCop)
+	{
+		if (m_nSkin = 1)
+		{
+			// Blue eyes
+			eyeGlow->red = 0;
+			eyeGlow->green = 50;
+			eyeGlow->blue = 150;
+			eyeGlow->alpha = 100;
+		}
+	}
+	else if (iszModelName == iszModel_RegularSoldier)
 	{
 		if (m_nSkin == COMBINE_SKIN_SHOTGUNNER)
 		{
@@ -1479,7 +1517,14 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 				{
 					m_flLastAttackTime = gpGlobals->curtime;
 
-					m_Sentences.Speak( "COMBINE_ANNOUNCE", SENTENCE_PRIORITY_HIGH );
+					if (m_bAllyCop)
+					{
+						m_Sentences.Speak("METROPOLICE_GO_ALERT", SENTENCE_PRIORITY_HIGH);
+					}
+					else
+					{
+						m_Sentences.Speak("COMBINE_ANNOUNCE", SENTENCE_PRIORITY_HIGH);
+					}
 
 					// Wait two seconds
 					SetWait( 2.0 );
@@ -1639,7 +1684,14 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 							m_pSquad->SquadRemember(bits_MEMORY_PLAYER_HURT);
 						}
 
-						m_Sentences.Speak( "COMBINE_PLAYERHIT", SENTENCE_PRIORITY_INVALID );
+						if (m_bAllyCop)
+						{
+							m_Sentences.Speak("METROPOLICE_PLAYERHIT", SENTENCE_PRIORITY_INVALID);
+						}
+						else
+						{
+							m_Sentences.Speak("COMBINE_PLAYERHIT", SENTENCE_PRIORITY_INVALID);
+						}
 						JustMadeSound( SENTENCE_PRIORITY_HIGH );
 					}
 					if ( pEntity->MyNPCPointer() )
@@ -2173,6 +2225,10 @@ void CNPC_Combine::AnnounceAssault(void)
 	if ( FVisible( pBCC ) )
 	{
 		m_Sentences.Speak( "COMBINE_ASSAULT" );
+		if (m_bAllyCop)
+		{
+			m_Sentences.Speak("METROPOLICE_AS_HIT_RALLY");
+		}
 	}
 }
 
@@ -2180,34 +2236,80 @@ void CNPC_Combine::AnnounceAssault(void)
 void CNPC_Combine::AnnounceEnemyType( CBaseEntity *pEnemy )
 {
 	const char *pSentenceName = "COMBINE_MONST";
+	if (m_bAllyCop)
+	{
+		pSentenceName = "METROPOLICE_MONST";
+	}
 	switch ( pEnemy->Classify() )
 	{
 	case CLASS_PLAYER:
-		pSentenceName = "COMBINE_ALERT";
+		if (m_bAllyCop)
+		{
+			pSentenceName = "METROPOLICE_MONST_PLAYER";
+		}
+		else
+		{
+			pSentenceName = "COMBINE_ALERT";
+		}
 		break;
 
 	case CLASS_PLAYER_ALLY:
 	case CLASS_CITIZEN_REBEL:
 	case CLASS_CITIZEN_PASSIVE:
 	case CLASS_VORTIGAUNT:
-		pSentenceName = "COMBINE_MONST_CITIZENS";
+		if (m_bAllyCop)
+		{
+			pSentenceName = "METROPOLICE_MONST_CITIZENS";
+		}
+		else
+		{
+			pSentenceName = "COMBINE_MONST_CITIZENS";
+		}
 		break;
 
 	case CLASS_PLAYER_ALLY_VITAL:
-		pSentenceName = "COMBINE_MONST_CHARACTER";
+		if (m_bAllyCop)
+		{
+			pSentenceName = "METROPOLICE_MONST_CHARACTER";
+		}
+		else
+		{
+			pSentenceName = "COMBINE_MONST_CHARACTER";
+		}
 		break;
 
 	case CLASS_ANTLION:
-		pSentenceName = "COMBINE_MONST_BUGS";
+		if (m_bAllyCop)
+		{
+			pSentenceName = "METROPOLICE_MONST_BUGS";
+		}
+		else
+		{
+			pSentenceName = "COMBINE_MONST_BUGS";
+		}
 		break;
 
 	case CLASS_ZOMBIE:
-		pSentenceName = "COMBINE_MONST_ZOMBIES";
+		if (m_bAllyCop)
+		{
+			pSentenceName = "METROPOLICE_MONST_ZOMBIES";
+		}
+		else
+		{
+			pSentenceName = "COMBINE_MONST_ZOMBIES";
+		}
 		break;
 
 	case CLASS_HEADCRAB:
 	case CLASS_BARNACLE:
-		pSentenceName = "COMBINE_MONST_PARASITES";
+		if (m_bAllyCop)
+		{
+			pSentenceName = "METROPOLICE_MONST_PARASITES";
+		}
+		else
+		{
+			pSentenceName = "COMBINE_MONST_PARASITES";
+		}
 		break;
 	}
 
@@ -2223,7 +2325,14 @@ void CNPC_Combine::AnnounceEnemyKill( CBaseEntity *pEnemy )
 	switch ( pEnemy->Classify() )
 	{
 	case CLASS_PLAYER:
-		pSentenceName = "COMBINE_PLAYER_DEAD";
+		if (m_bAllyCop)
+		{
+			pSentenceName = "METROPOLICE_KILL_PLAYER";
+		}
+		else
+		{
+			pSentenceName = "COMBINE_PLAYER_DEAD";
+		}
 		break;
 
 		// no sentences for these guys yet
@@ -2561,6 +2670,10 @@ int CNPC_Combine::SelectSchedule( void )
 						// I hear something dangerous, probably need to take cover.
 						// dangerous sound nearby!, call it out
 						const char *pSentenceName = "COMBINE_DANGER";
+						if (m_bAllyCop)
+						{
+							pSentenceName = "METROPOLICE_DANGER";
+						}
 
 						CBaseEntity *pSoundOwner = pSound->m_hOwner;
 						if ( pSoundOwner )
@@ -2571,7 +2684,14 @@ int CNPC_Combine::SelectSchedule( void )
 								if ( IRelationType( pGrenade->GetThrower() ) != D_LI )
 								{
 									// special case call out for enemy grenades
-									pSentenceName = "COMBINE_GREN";
+									if (m_bAllyCop)
+									{
+										pSentenceName = "METROPOLICE_DANGER_GREN";
+									}
+									else
+									{
+										pSentenceName = "COMBINE_GREN";
+									}
 								}
 							}
 						}
@@ -2875,7 +2995,14 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 					HasCondition(COND_CAN_RANGE_ATTACK2)		&&
 					OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 				{
-					m_Sentences.Speak( "COMBINE_THROW_GRENADE" );
+					if (m_bAllyCop)
+					{
+						m_Sentences.Speak("METRPOLICE_DANGER_GREN");
+					}
+					else
+					{
+						m_Sentences.Speak("COMBINE_THROW_GRENADE");
+					}
 					return SCHED_COMBINE_TOSS_GRENADE_COVER1;
 				}
 				else
@@ -3316,7 +3443,14 @@ void CNPC_Combine::HandleAnimEvent( animevent_t *pEvent )
 			}
 
 		case COMBINE_AE_CAUGHT_ENEMY:
-			m_Sentences.Speak( "COMBINE_ALERT" );
+			if (m_bAllyCop)
+			{
+				m_Sentences.Speak("METROPOLICE_GO_ALERT");
+			}
+			else
+			{
+				m_Sentences.Speak("COMBINE_ALERT");
+			}
 			handledEvent = true;
 			break;
 
@@ -3403,7 +3537,14 @@ void CNPC_Combine::SpeakSentence( int sentenceType )
 		// If I'm moving more than 20ft, I need to talk about it
 		if ( GetNavigator()->GetPath()->GetPathLength() > 20 * 12.0f )
 		{
-			m_Sentences.Speak( "COMBINE_FLANK" );
+			if (m_bAllyCop)
+			{
+				m_Sentences.Speak("METROPOLICE_FLANK");
+			}
+			else
+			{
+				m_Sentences.Speak("COMBINE_FLANK");
+			}
 		}
 		break;
 	}
@@ -3425,12 +3566,26 @@ void CNPC_Combine::PainSound ( const CTakeDamageInfo &info )
 		if ( !HasMemory(bits_MEMORY_PAIN_LIGHT_SOUND) && healthRatio > 0.9 )
 		{
 			Remember( bits_MEMORY_PAIN_LIGHT_SOUND );
-			pSentenceName = "COMBINE_TAUNT";
+			if (m_bAllyCop)
+			{
+				pSentenceName = "METROPOLICE_PAIN_LIGHT";
+			}
+			else
+			{
+				pSentenceName = "COMBINE_TAUNT";
+			}
 		}
 		else if ( !HasMemory(bits_MEMORY_PAIN_HEAVY_SOUND) && healthRatio < 0.25 )
 		{
 			Remember( bits_MEMORY_PAIN_HEAVY_SOUND );
-			pSentenceName = "COMBINE_COVER";
+			if (m_bAllyCop)
+			{
+				pSentenceName = "METROPOLICE_SO_FORCE_COVER";
+			}
+			else
+			{
+				pSentenceName = "COMBINE_COVER";
+			}
 		}
 
 		m_Sentences.Speak( pSentenceName, SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_ALWAYS );
@@ -3472,11 +3627,25 @@ void CNPC_Combine::LostEnemySound( void)
 	const char *pSentence;
 	if (!(CBaseEntity*)GetEnemy() || gpGlobals->curtime - GetEnemyLastTimeSeen() > 10)
 	{
-		pSentence = "COMBINE_LOST_LONG"; 
+		if (m_bAllyCop)
+		{
+			pSentence = "METROPOLICE_LOST_LONG";
+		}
+		else
+		{
+			pSentence = "COMBINE_LOST_LONG";
+		}
 	}
 	else
 	{
-		pSentence = "COMBINE_LOST_SHORT";
+		if (m_bAllyCop)
+		{
+			pSentence = "METROPOLICE_LOST_SHORT";
+		}
+		else
+		{
+			pSentence = "COMBINE_LOST_SHORT";
+		}
 	}
 
 	if ( m_Sentences.Speak( pSentence ) >= 0 )
@@ -3493,7 +3662,14 @@ void CNPC_Combine::LostEnemySound( void)
 //-----------------------------------------------------------------------------
 void CNPC_Combine::FoundEnemySound( void)
 {
-	m_Sentences.Speak( "COMBINE_REFIND_ENEMY", SENTENCE_PRIORITY_HIGH );
+	if (m_bAllyCop)
+	{
+		m_Sentences.Speak("METROPOLICE_REFIND_ENEMY", SENTENCE_PRIORITY_HIGH);
+	}
+	else
+	{
+		m_Sentences.Speak("COMBINE_REFIND_ENEMY", SENTENCE_PRIORITY_HIGH);
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -3504,11 +3680,18 @@ void CNPC_Combine::FoundEnemySound( void)
 //-----------------------------------------------------------------------------
 
 // BUGBUG: It looks like this is never played because combine don't do SCHED_WAKE_ANGRY or anything else that does a TASK_SOUND_WAKE
-void CNPC_Combine::AlertSound( void)
+void CNPC_Combine::AlertSound(void)
 {
-	if ( gpGlobals->curtime > m_flNextAlertSoundTime )
+	if (gpGlobals->curtime > m_flNextAlertSoundTime)
 	{
-		m_Sentences.Speak( "COMBINE_GO_ALERT", SENTENCE_PRIORITY_HIGH );
+		if (m_bAllyCop)
+		{
+			m_Sentences.Speak("METROPOLICE_GO_ALERT", SENTENCE_PRIORITY_HIGH);
+		}
+		else
+		{
+			m_Sentences.Speak("COMBINE_GO_ALERT", SENTENCE_PRIORITY_HIGH);
+		}
 		m_flNextAlertSoundTime = gpGlobals->curtime + 10.0f;
 	}
 }
@@ -3516,11 +3699,11 @@ void CNPC_Combine::AlertSound( void)
 //=========================================================
 // NotifyDeadFriend
 //=========================================================
-void CNPC_Combine::NotifyDeadFriend ( CBaseEntity* pFriend )
+void CNPC_Combine::NotifyDeadFriend(CBaseEntity* pFriend)
 {
 #ifdef EZ
 	// Blixibon - Manhack handling
-	if ( pFriend == m_hManhack )
+	if (pFriend == m_hManhack)
 	{
 		//m_Sentences.Speak( "METROPOLICE_MANHACK_KILLED", SENTENCE_PRIORITY_NORMAL, SENTENCE_CRITERIA_NORMAL );
 		DevMsg("My manhack died!\n");
@@ -3529,19 +3712,33 @@ void CNPC_Combine::NotifyDeadFriend ( CBaseEntity* pFriend )
 	}
 
 	// No notifications for squadmates' dead manhacks
-	if ( FClassnameIs( pFriend, "npc_manhack" ) )
+	if (FClassnameIs(pFriend, "npc_manhack"))
 		return;
 #endif
-	if ( GetSquad()->NumMembers() < 2 )
+	if (GetSquad()->NumMembers() < 2)
 	{
-		m_Sentences.Speak( "COMBINE_LAST_OF_SQUAD", SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_NORMAL );
+		if (m_bAllyCop)
+		{
+			m_Sentences.Speak("METROPOLICE_LAST_OF_SQUAD", SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_NORMAL);
+		}
+		else
+		{
+			m_Sentences.Speak("COMBINE_LAST_OF_SQUAD", SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_NORMAL);
+		}
 		JustMadeSound();
 		return;
 	}
 	// relaxed visibility test so that guys say this more often
 	//if( FInViewCone( pFriend ) && FVisible( pFriend ) )
 	{
-		m_Sentences.Speak( "COMBINE_MAN_DOWN" );
+		if (m_bAllyCop)
+		{
+			m_Sentences.Speak("METROPOLICE_MAN_DOWN");
+		}
+		else
+		{
+			m_Sentences.Speak("COMBINE_MAN_DOWN");
+		}
 	}
 	BaseClass::NotifyDeadFriend(pFriend);
 }
@@ -3549,36 +3746,57 @@ void CNPC_Combine::NotifyDeadFriend ( CBaseEntity* pFriend )
 //=========================================================
 // DeathSound 
 //=========================================================
-void CNPC_Combine::DeathSound ( void )
+void CNPC_Combine::DeathSound(void)
 {
 	// NOTE: The response system deals with this at the moment
-	if ( GetFlags() & FL_DISSOLVING )
+	if (GetFlags() & FL_DISSOLVING)
 		return;
 
-	m_Sentences.Speak( "COMBINE_DIE", SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_ALWAYS );
+	if (m_bAllyCop)
+	{
+		m_Sentences.Speak("METROPOLICE_DIE", SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_ALWAYS);
+	}
+	else
+	{
+		m_Sentences.Speak("COMBINE_DIE", SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_ALWAYS);
+	}
 }
 
 //=========================================================
 // IdleSound 
 //=========================================================
-void CNPC_Combine::IdleSound( void )
+void CNPC_Combine::IdleSound(void)
 {
-	if (g_fCombineQuestion || random->RandomInt(0,1))
+	if (g_fCombineQuestion || random->RandomInt(0, 1))
 	{
 		if (!g_fCombineQuestion)
 		{
 			// ask question or make statement
-			switch (random->RandomInt(0,2))
+			switch (random->RandomInt(0, 2))
 			{
 			case 0: // check in
-				if ( m_Sentences.Speak( "COMBINE_CHECK" ) >= 0 )
+				if (m_bAllyCop)
+				{
+					if (m_Sentences.Speak("METROPOLICE_IDLE_CHECK_CR") >= 0)
+					{
+						g_fCombineQuestion = 1;
+					}
+				}
+				else if (m_Sentences.Speak("COMBINE_CHECK") >= 0)
 				{
 					g_fCombineQuestion = 1;
 				}
 				break;
 
 			case 1: // question
-				if ( m_Sentences.Speak( "COMBINE_QUEST" ) >= 0 )
+				if (m_bAllyCop)
+				{
+					if (m_Sentences.Speak("METROPOLICE_IDLE_QUEST_CR") >= 0)
+					{
+						g_fCombineQuestion = 2;
+					}
+				}
+				else if ( m_Sentences.Speak( "COMBINE_QUEST" ) >= 0 )
 				{
 					g_fCombineQuestion = 2;
 				}
@@ -3586,6 +3804,10 @@ void CNPC_Combine::IdleSound( void )
 
 			case 2: // statement
 				m_Sentences.Speak( "COMBINE_IDLE" );
+				if (m_bAllyCop)
+				{
+					m_Sentences.Speak("METROPOLICE_IDLE");
+				}
 				break;
 			}
 		}
@@ -3594,13 +3816,21 @@ void CNPC_Combine::IdleSound( void )
 			switch (g_fCombineQuestion)
 			{
 			case 1: // check in
-				if ( m_Sentences.Speak( "COMBINE_CLEAR" ) >= 0 )
+				if (m_Sentences.Speak("METROPOLICE_IDLE_CLEAR_CR") >= 0)
+				{
+					g_fCombineQuestion = 0;
+				}
+				else if ( m_Sentences.Speak( "COMBINE_CLEAR" ) >= 0 )
 				{
 					g_fCombineQuestion = 0;
 				}
 				break;
 			case 2: // question 
-				if ( m_Sentences.Speak( "COMBINE_ANSWER" ) >= 0 )
+				if (m_Sentences.Speak("METROPOLICE_IDLE_ANSWER_CR") >= 0)
+				{
+					g_fCombineQuestion = 0;
+				}
+				else if ( m_Sentences.Speak( "COMBINE_ANSWER" ) >= 0 )
 				{
 					g_fCombineQuestion = 0;
 				}

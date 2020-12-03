@@ -170,6 +170,7 @@ BEGIN_DATADESC( CNPC_MetroPolice )
 	DEFINE_FIELD( m_bShouldActivateBaton, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_iPistolClips, FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_fWeaponDrawn, FIELD_BOOLEAN, "weapondrawn" ),
+	DEFINE_KEYFIELD(m_bTraitorCops, FIELD_BOOLEAN, "betrayedcombine"),
 	DEFINE_FIELD( m_LastShootSlot, FIELD_INTEGER ),
 	DEFINE_EMBEDDED( m_TimeYieldShootSlot ),
 	DEFINE_EMBEDDED( m_Sentences ),
@@ -466,6 +467,7 @@ void CNPC_MetroPolice::NotifyDeadFriend( CBaseEntity* pFriend )
 //-----------------------------------------------------------------------------
 CNPC_MetroPolice::CNPC_MetroPolice()
 {
+	m_bTraitorCops = false;
 }
 
 
@@ -646,6 +648,16 @@ void CNPC_MetroPolice::Spawn( void )
 		m_iHealth = sk_metropolice_simple_health.GetFloat();
 	}
 
+	if (m_bTraitorCops)
+	{
+		//DevMsg("%s spawned as a traitor!\n", GetDebugName());
+		m_nSkin = random->RandomInt(5, 6);
+	}
+	//else
+	//{
+	//	DevMsg("%s spawned loyal!\n", GetDebugName());
+	//}
+
 	m_flFieldOfView		= -0.2;// indicates the width of this NPC's forward view cone ( as a dotproduct result )
 	m_NPCState			= NPC_STATE_NONE;
 	if ( !HasSpawnFlags( SF_NPC_START_EFFICIENT ) )
@@ -691,7 +703,6 @@ void CNPC_MetroPolice::Spawn( void )
 			GetActiveWeapon()->AddEffects( EF_NODRAW );
 		}
 	}
-
 
 	m_TimeYieldShootSlot.Set( 2, 6 );
 
@@ -2714,7 +2725,16 @@ float CNPC_MetroPolice::MaxYawSpeed( void )
 //-----------------------------------------------------------------------------
 Class_T	CNPC_MetroPolice::Classify ( void )
 {
-	return CLASS_METROPOLICE;
+	if (m_bTraitorCops)
+	{
+		//DevMsg("%s is a traitor!\n", GetDebugName());
+		return CLASS_PLAYER_ALLY;
+	}
+	else
+	{
+		//DevMsg("%s is loyal!\n", GetDebugName());
+		return CLASS_METROPOLICE;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -2801,6 +2821,12 @@ void CNPC_MetroPolice::OnAnimEventStartDeployManhack( void )
 	}
 
 	pManhack->Spawn();
+	{
+		if (m_bTraitorCops)
+		{
+			pManhack->KeyValue("TraitorHack", "1");
+		}
+	}
 
 	// Make us move with his hand until we're deployed
 	pManhack->SetParent( this, handAttachment );

@@ -145,6 +145,7 @@ private:
 
 	bool m_bIsClawScanner;	// Formerly the shield scanner.
 	bool m_bIsOpen;			// Only for claw scanner
+	bool m_bIsHealerScanner;	// Made for the scanners to drop medkits for the player
 
 	COutputEvent		m_OnPhotographPlayer;
 	COutputEvent		m_OnPhotographNPC;

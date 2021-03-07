@@ -1346,22 +1346,15 @@ EyeGlow_t * CNPC_Combine::GetEyeGlowData(int i)
 	string_t iszModel_PrisonGuard = AllocPooledString("models/combine_soldier_prisonguard.mdl");
 	string_t iszModel_RegularSoldier = AllocPooledString("models/combine_soldier.mdl");
 	string_t iszModel_AllyCop = AllocPooledString("models/police.mdl");
-	if ("models/police.mdl")
-	{
-		m_nSkin = random->RandomInt(0, 1);
-	}
 	string_t iszModelName = GetModelName();
 
 	if (iszModelName == iszModel_AllyCop)
 	{
-		if (m_nSkin = 1)
-		{
 			// Blue eyes
 			eyeGlow->red = 0;
 			eyeGlow->green = 50;
 			eyeGlow->blue = 150;
 			eyeGlow->alpha = 100;
-		}
 	}
 	else if (iszModelName == iszModel_RegularSoldier)
 	{
@@ -3436,8 +3429,14 @@ void CNPC_Combine::HandleAnimEvent( animevent_t *pEvent )
 						EmitSound( "NPC_Combine.WeaponBash" );
 					}
 				}			
-
-				m_Sentences.Speak( "COMBINE_KICK" );
+				if (m_bAllyCop)
+				{
+					m_Sentences.Speak("COMBINE_KICK");
+				}
+				else
+				{
+					m_Sentences.Speak("COMBINE_KICK");
+				}
 				handledEvent = true;
 				break;
 			}
@@ -3562,6 +3561,10 @@ void CNPC_Combine::PainSound ( const CTakeDamageInfo &info )
 	if ( gpGlobals->curtime > m_flNextPainSoundTime )
 	{
 		const char *pSentenceName = "COMBINE_PAIN";
+		if (m_bAllyCop)
+		{
+			const char *pSentenceName = "METROPOLICE_PAIN";
+		}
 		float healthRatio = (float)GetHealth() / (float)GetMaxHealth();
 		if ( !HasMemory(bits_MEMORY_PAIN_LIGHT_SOUND) && healthRatio > 0.9 )
 		{

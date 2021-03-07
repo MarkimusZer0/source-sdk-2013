@@ -150,6 +150,7 @@ BEGIN_DATADESC( CNPC_CScanner )
 
 	DEFINE_FIELD( m_bIsClawScanner,			FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bIsOpen,				FIELD_BOOLEAN ),
+	DEFINE_KEYFIELD(m_bIsHealerScanner,		FIELD_BOOLEAN, "HealOurBoys" ),
 
 	// DEFINE_FIELD( m_bHasSpoken,			FIELD_BOOLEAN ),
 
@@ -927,28 +928,65 @@ void CNPC_CScanner::DeployMine()
 	// iterate through all children
 	for ( child = FirstMoveChild(); child != NULL; child = child->NextMovePeer() )
 	{
-		if( FClassnameIs( child, "combine_mine" ) )
+		if (m_bIsHealerScanner)
 		{
-			child->SetParent( NULL );
-			child->SetAbsVelocity( GetAbsVelocity() );
-			child->SetOwnerEntity( this );
-
-			ScannerEmitSound( "DeployMine" );
-
-			IPhysicsObject *pPhysObj = child->VPhysicsGetObject();
-			if( pPhysObj )
+			if (FClassnameIs(child, "item_healthkit"))
 			{
-				// Make sure the mine's awake
-				pPhysObj->Wake();
-			}
+				child->SetParent(NULL);
+				//child->SetAbsVelocity(GetAbsVelocity());
+				child->SetOwnerEntity(this);
 
-			if( m_bIsClawScanner )
+				Vector vecMineLocation = GetAbsOrigin();
+				vecMineLocation.z -= 32.0;
+
+				Vector    vecOrigin;
+				QAngle    angles;
+				child->SetAbsOrigin(vecOrigin);
+				child->SetAbsAngles(angles);
+
+				ScannerEmitSound("DeployMine");
+
+				IPhysicsObject *pPhysObj = child->VPhysicsGetObject();
+				if (pPhysObj)
+				{
+					// Make sure the mine's awake
+					pPhysObj->Wake();
+				}
+
+				if (m_bIsClawScanner)
+				{
+					// Fold up.
+					SetActivity(ACT_DISARM);
+				}
+
+				return;
+			}
+		}
+		else
+		{
+			if (FClassnameIs(child, "combine_mine"))
 			{
-				// Fold up.
-				SetActivity( ACT_DISARM );
-			}
+				child->SetParent(NULL);
+				child->SetAbsVelocity(GetAbsVelocity());
+				child->SetOwnerEntity(this);
 
-			return;
+				ScannerEmitSound("DeployMine");
+
+				IPhysicsObject *pPhysObj = child->VPhysicsGetObject();
+				if (pPhysObj)
+				{
+					// Make sure the mine's awake
+					pPhysObj->Wake();
+				}
+
+				if (m_bIsClawScanner)
+				{
+					// Fold up.
+					SetActivity(ACT_DISARM);
+				}
+
+				return;
+			}
 		}
 	}
 }
@@ -984,16 +1022,34 @@ void CNPC_CScanner::InputEquipMine(inputdata_t &inputdata)
 	// iterate through all children
 	for ( child = FirstMoveChild(); child != NULL; child = child->NextMovePeer() )
 	{
-		if( FClassnameIs( child, "combine_mine" ) )
+		if (m_bIsHealerScanner)
 		{
-			// Already have a mine!
-			return;
+			if (FClassnameIs(child, "item_healthkit"))
+			{
+				// Already have a mine!
+				return;
+			}
+		}
+		else
+		{
+			if (FClassnameIs(child, "combine_mine"))
+			{
+				// Already have a mine!
+				return;
+			}
 		}
 	}
 
 	CBaseEntity *pEnt;
 
-	pEnt = CreateEntityByName( "combine_mine" );
+	if (m_bIsHealerScanner)
+	{
+		pEnt = CreateEntityByName("item_healthkit");
+	}
+	else
+	{
+		pEnt = CreateEntityByName("combine_mine");
+	}
 	bool bPlacedMine = false;
 
 	if( m_bIsClawScanner )

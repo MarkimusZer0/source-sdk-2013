@@ -86,8 +86,14 @@ enum
 	METROPOLICE_CHATTER_RESPONSE = 2,
 
 	METROPOLICE_CHATTER_RESPONSE_TYPE_COUNT = 2,
-};
 
+
+	TRAITOR_CHATTER_WAIT_FOR_RESPONSE = 3,
+	TRAITOR_CHATTER_ASK_QUESTION = 4,
+	TRAITOR_CHATTER_RESPONSE = 5,
+
+	TRAITOR_CHATTER_RESPONSE_TYPE_COUNT = 5,
+};
 
 enum SpeechMemory_t
 {
@@ -437,10 +443,20 @@ void CNPC_MetroPolice::NotifyDeadFriend( CBaseEntity* pFriend )
 
 	if ( pFriend == m_hManhack )
 	{
-		m_Sentences.Speak( "METROPOLICE_MANHACK_KILLED", SENTENCE_PRIORITY_NORMAL, SENTENCE_CRITERIA_NORMAL );
-		DevMsg("My manhack died!\n");
-		m_hManhack = NULL;
-		return;
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_MANHACK_KILLED", SENTENCE_PRIORITY_NORMAL, SENTENCE_CRITERIA_NORMAL);
+			DevMsg("My traitorhack died!\n");
+			m_hManhack = NULL;
+			return;
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_MANHACK_KILLED", SENTENCE_PRIORITY_NORMAL, SENTENCE_CRITERIA_NORMAL);
+			DevMsg("My manhack died!\n");
+			m_hManhack = NULL;
+			return;
+		}
 	}
 
 	// No notifications for squadmates' dead manhacks
@@ -455,11 +471,26 @@ void CNPC_MetroPolice::NotifyDeadFriend( CBaseEntity* pFriend )
 
 	if ( GetSquad()->NumMembers() < 2 )
 	{
-		m_Sentences.Speak( "METROPOLICE_LAST_OF_SQUAD", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL );
-		return;
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_LAST_OF_SQUAD", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL);
+			return;
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_LAST_OF_SQUAD", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL);
+			return;
+		}
 	}
 
-	m_Sentences.Speak( "METROPOLICE_MAN_DOWN", SENTENCE_PRIORITY_MEDIUM );
+	if (m_bTraitorCops)
+	{
+		m_Sentences.Speak("TRAITOR_MAN_DOWN", SENTENCE_PRIORITY_MEDIUM);
+	}
+	else
+	{
+		m_Sentences.Speak("METROPOLICE_MAN_DOWN", SENTENCE_PRIORITY_MEDIUM);
+	}
 }
 
 
@@ -764,19 +795,47 @@ void CNPC_MetroPolice::SpeakFuncTankSentence( int nSentenceType )
 	switch ( nSentenceType )
 	{
 	case FUNCTANK_SENTENCE_MOVE_TO_MOUNT:
-		m_Sentences.Speak( "METROPOLICE_FT_APPROACH", SENTENCE_PRIORITY_MEDIUM );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("METROPOLICE_FT_APPROACH", SENTENCE_PRIORITY_MEDIUM);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_FT_APPROACH", SENTENCE_PRIORITY_MEDIUM);
+		}
 		break;
 
 	case FUNCTANK_SENTENCE_JUST_MOUNTED:
-		m_Sentences.Speak( "METROPOLICE_FT_MOUNT", SENTENCE_PRIORITY_HIGH );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_FT_MOUNT", SENTENCE_PRIORITY_HIGH);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_FT_MOUNT", SENTENCE_PRIORITY_HIGH);
+		}
 		break;
 
 	case FUNCTANK_SENTENCE_SCAN_FOR_ENEMIES:
-		m_Sentences.Speak( "METROPOLICE_FT_SCAN", SENTENCE_PRIORITY_NORMAL );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_FT_SCAN", SENTENCE_PRIORITY_NORMAL);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_FT_SCAN", SENTENCE_PRIORITY_NORMAL);
+		}
 		break;
 
 	case FUNCTANK_SENTENCE_DISMOUNTING:
-		m_Sentences.Speak( "METROPOLICE_FT_DISMOUNT", SENTENCE_PRIORITY_HIGH );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_FT_DISMOUNT", SENTENCE_PRIORITY_HIGH);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_FT_DISMOUNT", SENTENCE_PRIORITY_HIGH);
+		}
 		break;
 	}
 }
@@ -790,11 +849,25 @@ void CNPC_MetroPolice::SpeakStandoffSentence( int nSentenceType )
 	switch ( nSentenceType )
 	{
 	case STANDOFF_SENTENCE_BEGIN_STANDOFF:
-		m_Sentences.Speak( "METROPOLICE_SO_BEGIN", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_SQUAD_LEADER );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_SO_BEGIN", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_SQUAD_LEADER);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_SO_BEGIN", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_SQUAD_LEADER);
+		}
 		break;
 
 	case STANDOFF_SENTENCE_END_STANDOFF:
-		m_Sentences.Speak( "METROPOLICE_SO_END", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_SQUAD_LEADER );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_SO_END", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_SQUAD_LEADER);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_SO_END", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_SQUAD_LEADER);
+		}
 		break;
 
 	case STANDOFF_SENTENCE_OUT_OF_AMMO:
@@ -802,13 +875,27 @@ void CNPC_MetroPolice::SpeakStandoffSentence( int nSentenceType )
 		break;
 
 	case STANDOFF_SENTENCE_FORCED_TAKE_COVER:
-		m_Sentences.Speak( "METROPOLICE_SO_FORCE_COVER" );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_SO_FORCE_COVER");
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_SO_FORCE_COVER");
+		}
 		break;
 
 	case STANDOFF_SENTENCE_STAND_CHECK_TARGET:
-		if ( gm_flTimeLastSpokePeek != 0 && gpGlobals->curtime - gm_flTimeLastSpokePeek > 20 )
+		if (gm_flTimeLastSpokePeek != 0 && gpGlobals->curtime - gm_flTimeLastSpokePeek > 20)
 		{
-			m_Sentences.Speak( "METROPOLICE_SO_PEEK" );
+			if (m_bTraitorCops)
+			{
+				m_Sentences.Speak("TRAITOR_SO_PEEK");
+			}
+			else
+			{
+				m_Sentences.Speak("METROPOLICE_SO_PEEK");
+			}
 			gm_flTimeLastSpokePeek = gpGlobals->curtime;
 		}
 		break;
@@ -823,11 +910,25 @@ void CNPC_MetroPolice::SpeakAssaultSentence( int nSentenceType )
 	switch ( nSentenceType )
 	{
 	case ASSAULT_SENTENCE_HIT_RALLY_POINT:
-		m_Sentences.SpeakQueued( "METROPOLICE_AS_HIT_RALLY", SENTENCE_PRIORITY_NORMAL );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.SpeakQueued("TRAITOR_AS_HIT_RALLY", SENTENCE_PRIORITY_NORMAL);
+		}
+		else
+		{
+			m_Sentences.SpeakQueued("METROPOLICE_AS_HIT_RALLY", SENTENCE_PRIORITY_NORMAL);
+		}
 		break;
 
 	case ASSAULT_SENTENCE_HIT_ASSAULT_POINT:
-		m_Sentences.SpeakQueued( "METROPOLICE_AS_HIT_ASSAULT", SENTENCE_PRIORITY_NORMAL );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.SpeakQueued("TRAITOR_AS_HIT_ASSAULT", SENTENCE_PRIORITY_NORMAL);
+		}
+		else
+		{
+			m_Sentences.SpeakQueued("METROPOLICE_AS_HIT_ASSAULT", SENTENCE_PRIORITY_NORMAL);
+		}
 		break;
 
 	case ASSAULT_SENTENCE_SQUAD_ADVANCE_TO_RALLY:
@@ -849,7 +950,14 @@ void CNPC_MetroPolice::SpeakAssaultSentence( int nSentenceType )
 		break;
 
 	case ASSAULT_SENTENCE_UNDER_ATTACK:
-		m_Sentences.Speak( "METROPOLICE_GO_ALERT" );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_GO_ALERT");
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_GO_ALERT");
+		}
 		break;
 	}
 }
@@ -887,27 +995,70 @@ void CNPC_MetroPolice::SpeakSentence( int nSentenceType )
 	switch ( nSentenceType )
 	{
 	case METROPOLICE_SENTENCE_FREEZE:
-		m_Sentences.Speak( "METROPOLICE_FREEZE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_FREEZE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_FREEZE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL);
+		}
 		break;
 
 	case METROPOLICE_SENTENCE_HES_OVER_HERE:
-		m_Sentences.Speak( "METROPOLICE_OVER_HERE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_OVER_HERE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_OVER_HERE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL);
+		}
 		break;
 
 	case METROPOLICE_SENTENCE_HES_RUNNING:
-		m_Sentences.Speak( "METROPOLICE_HES_RUNNING", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_HES_RUNNING", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_HES_RUNNING", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL);
+		}
 		break;
 
 	case METROPOLICE_SENTENCE_TAKE_HIM_DOWN:
-		m_Sentences.Speak( "METROPOLICE_TAKE_HIM_DOWN", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_TAKE_HIM_DOWN", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_HES_RUNNING", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL);
+		}
 		break;
 
 	case METROPOLICE_SENTENCE_ARREST_IN_POSITION:
-		m_Sentences.Speak( "METROPOLICE_ARREST_IN_POS", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_ARREST_IN_POS", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_ARREST_IN_POS", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL);
+		}
 		break;
 
 	case METROPOLICE_SENTENCE_DEPLOY_MANHACK:
-		m_Sentences.Speak( "METROPOLICE_DEPLOY_MANHACK" );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_DEPLOY_MANHACK");
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_DEPLOY_MANHACK");
+		}
+
 		break;
 
 	case METROPOLICE_SENTENCE_MOVE_INTO_POSITION:
@@ -931,7 +1082,14 @@ void CNPC_MetroPolice::SpeakSentence( int nSentenceType )
 
 				if ( GetNavigator()->GetPath()->GetPathLength() > 20 * 12.0f )
 				{
-					m_Sentences.Speak( "METROPOLICE_FLANK" );
+					if (m_bTraitorCops)
+					{
+						m_Sentences.Speak("TRAITOR_FLANK");
+					}
+					else
+					{
+						m_Sentences.Speak("METROPOLICE_FLANK");
+					}
 				}
 			}
 		}
@@ -940,7 +1098,14 @@ void CNPC_MetroPolice::SpeakSentence( int nSentenceType )
 	case METROPOLICE_SENTENCE_HEARD_SOMETHING:
 		if ( ( GetState() == NPC_STATE_ALERT ) || ( GetState() == NPC_STATE_IDLE ) )
 		{
-			m_Sentences.Speak( "METROPOLICE_HEARD_SOMETHING", SENTENCE_PRIORITY_MEDIUM );
+			if (m_bTraitorCops)
+			{
+				m_Sentences.Speak("TRAITOR_HEARD_SOMETHING", SENTENCE_PRIORITY_MEDIUM);
+			}
+			else
+			{
+				m_Sentences.Speak("METROPOLICE_HEARD_SOMETHING", SENTENCE_PRIORITY_MEDIUM);
+			}
 		}
 		break;
 	}
@@ -967,44 +1132,93 @@ void CNPC_MetroPolice::AnnounceEnemyType( CBaseEntity *pEnemy )
 	{
 		// First contact, and I'm the squad leader.
 		const char *pSentenceName = "METROPOLICE_MONST";
-		switch ( pEnemy->Classify() )
+		switch (pEnemy->Classify())
 		{
 		case CLASS_PLAYER:
+		{
+			CBasePlayer *pPlayer = assert_cast<CBasePlayer*>(pEnemy);
+			if (pPlayer && pPlayer->IsInAVehicle())
 			{
-				CBasePlayer *pPlayer = assert_cast<CBasePlayer*>( pEnemy );
-				if ( pPlayer && pPlayer->IsInAVehicle() )
+				if (m_bTraitorCops)
+				{
+					pSentenceName = "TRAITOR_MONST_PLAYER_VEHICLE";
+				}
+				else
 				{
 					pSentenceName = "METROPOLICE_MONST_PLAYER_VEHICLE";
+				}
+			}
+			else
+			{
+				if (m_bTraitorCops)
+				{
+					pSentenceName = "TRAITOR_MONST_PLAYER";
 				}
 				else
 				{
 					pSentenceName = "METROPOLICE_MONST_PLAYER";
 				}
 			}
-			break;
+		}
+		break;
 
 		case CLASS_PLAYER_ALLY:
 		case CLASS_CITIZEN_REBEL:
 		case CLASS_CITIZEN_PASSIVE:
 		case CLASS_VORTIGAUNT:
-			pSentenceName = "METROPOLICE_MONST_CITIZENS";
+			if (m_bTraitorCops)
+			{
+				pSentenceName = "TRAITOR_MONST_CITIZENS";
+			}
+			else
+			{
+				pSentenceName = "METROPOLICE_MONST_CITIZENS";
+			}
 			break;
 
 		case CLASS_PLAYER_ALLY_VITAL:
-			pSentenceName = "METROPOLICE_MONST_CHARACTER";
+			if (m_bTraitorCops)
+			{
+				pSentenceName = "TRAITOR_MONST_CHARACTER";
+			}
+			else
+			{
+				pSentenceName = "METROPOLICE_MONST_CHARACTER";
+			}
 			break;
 
 		case CLASS_ANTLION:
-			pSentenceName = "METROPOLICE_MONST_BUGS";
+			if (m_bTraitorCops)
+			{
+				pSentenceName = "TRAITOR_MONST_BUGS";
+			}
+			else
+			{
+				pSentenceName = "METROPOLICE_MONST_BUGS";
+			}
 			break;
 
 		case CLASS_ZOMBIE:
-			pSentenceName = "METROPOLICE_MONST_ZOMBIES";
+			if (m_bTraitorCops)
+			{
+				pSentenceName = "TRAITOR_MONST_ZOMBIES";
+			}
+			else
+			{
+				pSentenceName = "METROPOLICE_MONST_ZOMBIES";
+			}
 			break;
 
 		case CLASS_HEADCRAB:
 		case CLASS_BARNACLE:
-			pSentenceName = "METROPOLICE_MONST_PARASITES";
+			if (m_bTraitorCops)
+			{
+				pSentenceName = "TRAITOR_MONST_PARASITES";
+			}
+			else
+			{
+				pSentenceName = "METROPOLICE_MONST_PARASITES";
+			}
 			break;
 		}
 
@@ -1034,7 +1248,14 @@ void CNPC_MetroPolice::AnnounceEnemyKill( CBaseEntity *pEnemy )
 	switch ( pEnemy->Classify() )
 	{
 	case CLASS_PLAYER:
-		pSentenceName = "METROPOLICE_KILL_PLAYER";
+		if (m_bTraitorCops)
+		{
+			pSentenceName = "TRAITOR_KILL_PLAYER";
+		}
+		else
+		{
+			pSentenceName = "METROPOLICE_KILL_PLAYER";
+		}
 		break;
 
 	// no sentences for these guys yet
@@ -1042,24 +1263,59 @@ void CNPC_MetroPolice::AnnounceEnemyKill( CBaseEntity *pEnemy )
 	case CLASS_CITIZEN_REBEL:
 	case CLASS_CITIZEN_PASSIVE:
 	case CLASS_VORTIGAUNT:
-		pSentenceName = "METROPOLICE_KILL_CITIZENS";
+		if (m_bTraitorCops)
+		{
+			pSentenceName = "TRAITOR_KILL_CITIZENS";
+		}
+		else
+		{
+			pSentenceName = "METROPOLICE_KILL_CITIZENS";
+		}
 		break;
 
 	case CLASS_PLAYER_ALLY_VITAL:
-		pSentenceName = "METROPOLICE_KILL_CHARACTER";
+		if (m_bTraitorCops)
+		{
+			pSentenceName = "TRAITOR_KILL_CHARACTER";
+		}
+		else
+		{
+			pSentenceName = "METROPOLICE_KILL_CHARACTER";
+		}
 		break;
 
 	case CLASS_ANTLION:
-		pSentenceName = "METROPOLICE_KILL_BUGS";
+		if (m_bTraitorCops)
+		{
+			pSentenceName = "TRAITOR_KILL_BUGS";
+		}
+		else
+		{
+			pSentenceName = "METROPOLICE_KILL_BUGS";
+		}
 		break;
 
 	case CLASS_ZOMBIE:
-		pSentenceName = "METROPOLICE_KILL_ZOMBIES";
+		if (m_bTraitorCops)
+		{
+			pSentenceName = "TRAITOR_KILL_ZOMBIES";
+		}
+		else
+		{
+			pSentenceName = "METROPOLICE_KILL_ZOMBIES";
+		}
 		break;
 
 	case CLASS_HEADCRAB:
 	case CLASS_BARNACLE:
-		pSentenceName = "METROPOLICE_KILL_PARASITES";
+		if (m_bTraitorCops)
+		{
+			pSentenceName = "TRAITOR_KILL_PARASITES";
+		}
+		else
+		{
+			pSentenceName = "METROPOLICE_KILL_PARASITES";
+		}
 		break;
 	}
 
@@ -1074,11 +1330,25 @@ void CNPC_MetroPolice::AnnounceOutOfAmmo( )
 {
 	if ( HasCondition( COND_NO_PRIMARY_AMMO ) )
 	{
-		m_Sentences.Speak( "METROPOLICE_COVER_NO_AMMO" );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_COVER_NO_AMMO");
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_COVER_NO_AMMO");
+		}
 	}
 	else
 	{
-		m_Sentences.Speak( "METROPOLICE_COVER_LOW_AMMO" );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_COVER_LOW_AMMO");
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_COVER_LOW_AMMO");
+		}
 	}
 }
 
@@ -1096,22 +1366,44 @@ void CNPC_MetroPolice::AnnounceTakeCoverFromDanger( CSound *pSound )
 			if ( IRelationType( pGrenade->GetThrower() ) != D_LI )
 			{
 				// special case call out for enemy grenades
-				m_Sentences.Speak( "METROPOLICE_DANGER_GREN", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL );
+				if (m_bTraitorCops)
+				{
+					m_Sentences.Speak("TRAITOR_DANGER_GREN", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL);
+				}
+				else
+				{
+					m_Sentences.Speak("METROPOLICE_DANGER_GREN", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL);
+				}
 			}
 			return;
 		}
 
 		if ( pSoundOwner->GetServerVehicle() )
 		{
-			m_Sentences.Speak( "METROPOLICE_DANGER_VEHICLE", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL );
-			return;
+			if (m_bTraitorCops)
+			{
+				m_Sentences.Speak("METROPOLICE_DANGER_VEHICLE", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL);
+				return;
+			}
+			else
+			{
+				m_Sentences.Speak("METROPOLICE_DANGER_VEHICLE", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL);
+				return;
+			}
 		}
 
 		if ( FClassnameIs( pSoundOwner, "npc_manhack" ) )
 		{
 			if ( pSoundOwner->HasPhysicsAttacker( 1.0f ) )
 			{
-				m_Sentences.Speak( "METROPOLICE_DANGER_MANHACK", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL );
+				if (m_bTraitorCops)
+				{
+					m_Sentences.Speak("TRAITOR_DANGER_MANHACK", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL);
+				}
+				else
+				{
+					m_Sentences.Speak("METROPOLICE_DANGER_MANHACK", SENTENCE_PRIORITY_HIGH, SENTENCE_CRITERIA_NORMAL);
+				}
 			}
 			return;
 		}
@@ -2496,7 +2788,14 @@ void CNPC_MetroPolice::InputActivateBaton( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 void CNPC_MetroPolice::AlertSound( void )
 {
-	m_Sentences.Speak( "METROPOLICE_GO_ALERT" );
+	if (m_bTraitorCops)
+	{
+		m_Sentences.Speak("TRAITOR_GO_ALERT");
+	}
+	else
+	{
+		m_Sentences.Speak("METROPOLICE_GO_ALERT");
+	}
 }
 
 
@@ -2508,8 +2807,14 @@ void CNPC_MetroPolice::DeathSound( const CTakeDamageInfo &info )
 {
 	if ( IsOnFire() )
 		return;
-
-	m_Sentences.Speak( "METROPOLICE_DIE", SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_ALWAYS );
+	if (m_bTraitorCops)
+	{
+		m_Sentences.Speak("TRAITOR_DIE", SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_ALWAYS);
+	}
+	else
+	{
+		m_Sentences.Speak("METROPOLICE_DIE", SENTENCE_PRIORITY_INVALID, SENTENCE_CRITERIA_ALWAYS);
+	}
 }
 
 
@@ -2531,11 +2836,25 @@ void CNPC_MetroPolice::LostEnemySound( void)
 	const char *pSentence;
 	if (!(CBaseEntity*)GetEnemy() || gpGlobals->curtime - GetEnemyLastTimeSeen() > 10)
 	{
-		pSentence = "METROPOLICE_LOST_LONG"; 
+		if (m_bTraitorCops)
+		{
+			pSentence = "TRAITOR_LOST_LONG";
+		}
+		else
+		{
+			pSentence = "METROPOLICE_LOST_LONG";
+		}
 	}
 	else
 	{
-		pSentence = "METROPOLICE_LOST_SHORT";
+		if (m_bTraitorCops)
+		{
+			pSentence = "TRAITOR_LOST_SHORT";
+		}
+		else
+		{
+			pSentence = "METROPOLICE_LOST_SHORT";
+		}
 	}
 
 	if ( m_Sentences.Speak( pSentence ) >= 0 )
@@ -2556,8 +2875,14 @@ void CNPC_MetroPolice::FoundEnemySound( void)
 	// Don't announce enemies when I'm in arrest behavior
 	if ( HasSpawnFlags( SF_METROPOLICE_ARREST_ENEMY ) )
 		return;
-
-	m_Sentences.Speak( "METROPOLICE_REFIND_ENEMY", SENTENCE_PRIORITY_HIGH );
+	if (m_bTraitorCops)
+	{
+		m_Sentences.Speak("TRAITOR_REFIND_ENEMY", SENTENCE_PRIORITY_HIGH);
+	}
+	else
+	{
+		m_Sentences.Speak("METROPOLICE_REFIND_ENEMY", SENTENCE_PRIORITY_HIGH);
+	}
 }
 
 
@@ -2569,8 +2894,16 @@ bool CNPC_MetroPolice::ShouldPlayIdleSound( void )
 	// If someone is waiting for a response, then respond!
 	if ( ( m_NPCState == NPC_STATE_IDLE ) || ( m_NPCState == NPC_STATE_ALERT ) )
 	{
-		if ( m_nIdleChatterType >= METROPOLICE_CHATTER_RESPONSE )
-			return FOkToMakeSound();
+		if (m_bTraitorCops)
+		{
+			if (m_nIdleChatterType >= TRAITOR_CHATTER_RESPONSE)
+				return FOkToMakeSound();
+		}
+		else
+		{
+			if (m_nIdleChatterType >= METROPOLICE_CHATTER_RESPONSE)
+				return FOkToMakeSound();
+		}
 	}
 
 	return BaseClass::ShouldPlayIdleSound();
@@ -2588,6 +2921,9 @@ void CNPC_MetroPolice::IdleSound( void )
 	switch( m_nIdleChatterType )
 	{
 	case METROPOLICE_CHATTER_WAIT_FOR_RESPONSE:
+		break;
+
+	case TRAITOR_CHATTER_WAIT_FOR_RESPONSE:
 		break;
 
 	case METROPOLICE_CHATTER_ASK_QUESTION:
@@ -2611,9 +2947,9 @@ void CNPC_MetroPolice::IdleSound( void )
 			int nQuestionType = random->RandomInt( 0, METROPOLICE_CHATTER_RESPONSE_TYPE_COUNT );
 			if ( !IsInSquad() || ( nQuestionType == METROPOLICE_CHATTER_RESPONSE_TYPE_COUNT ) )
 			{
-				m_Sentences.Speak( bIsCriminal ? "METROPOLICE_IDLE_CR" : "METROPOLICE_IDLE" );
-				break;
+					m_Sentences.Speak(bIsCriminal ? "METROPOLICE_IDLE_CR" : "METROPOLICE_IDLE");
 			}
+			break;
 
 			static const char *pQuestion[2][METROPOLICE_CHATTER_RESPONSE_TYPE_COUNT] = 
 			{
@@ -2629,20 +2965,78 @@ void CNPC_MetroPolice::IdleSound( void )
 		}
 		break;
 
+	case TRAITOR_CHATTER_ASK_QUESTION:
+	{
+		if (m_bPlayerIsNear && !HasMemory(bits_MEMORY_PLAYER_HARASSED))
+		{
+			if (m_Sentences.Speak("TRAITOR_IDLE_HARASS_PLAYER", SENTENCE_PRIORITY_NORMAL, SENTENCE_CRITERIA_NORMAL) >= 0)
+			{
+				Remember(bits_MEMORY_PLAYER_HARASSED);
+				if (GetSquad())
+				{
+					GetSquad()->SquadRemember(bits_MEMORY_PLAYER_HARASSED);
+				}
+			}
+			return;
+		}
+
+		if (!random->RandomInt(0, 1))
+			break;
+
+		int nQuestionType = random->RandomInt(0, TRAITOR_CHATTER_RESPONSE_TYPE_COUNT);
+		if (!IsInSquad() || (nQuestionType == TRAITOR_CHATTER_RESPONSE_TYPE_COUNT))
+		{
+			m_Sentences.Speak(bIsCriminal ? "TRAITOR_IDLE_CR" : "TRAITOR_IDLE");
+		}
+		break;
+
+		static const char *pQuestion[2][TRAITOR_CHATTER_RESPONSE_TYPE_COUNT] =
+		{
+			{ "TRAITOR_IDLE_CHECK", "TRAITOR_IDLE_QUEST" },
+			{ "TRAITOR_IDLE_CHECK_CR", "TRAITOR_IDLE_QUEST_CR" },
+		};
+
+		if (m_Sentences.Speak(pQuestion[bIsCriminal][nQuestionType]) >= 0)
+		{
+			GetSquad()->BroadcastInteraction(g_interactionMetrocopIdleChatter, (void*)(TRAITOR_CHATTER_RESPONSE + nQuestionType), this);
+			m_nIdleChatterType = TRAITOR_CHATTER_WAIT_FOR_RESPONSE;
+		}
+	}
+	break;
+
 	default:
 		{
-			int nResponseType = m_nIdleChatterType - METROPOLICE_CHATTER_RESPONSE;
-
-			static const char *pResponse[2][METROPOLICE_CHATTER_RESPONSE_TYPE_COUNT] = 
+			if (m_bTraitorCops)
 			{
-				{ "METROPOLICE_IDLE_CLEAR",		"METROPOLICE_IDLE_ANSWER" },
-				{ "METROPOLICE_IDLE_CLEAR_CR",	"METROPOLICE_IDLE_ANSWER_CR" },
-			};
+				int nResponseType = m_nIdleChatterType - TRAITOR_CHATTER_RESPONSE;
 
-			if ( m_Sentences.Speak( pResponse[bIsCriminal][nResponseType] ) >= 0 )
+				static const char *pResponse[2][TRAITOR_CHATTER_RESPONSE_TYPE_COUNT] =
+				{
+					{ "TRAITOR_IDLE_CLEAR", "TRAITOR_IDLE_ANSWER" },
+					{ "TRAITOR_IDLE_CLEAR_CR", "TRAITOR_IDLE_ANSWER_CR" },
+				};
+
+				if (m_Sentences.Speak(pResponse[bIsCriminal][nResponseType]) >= 0)
+				{
+					GetSquad()->BroadcastInteraction(g_interactionMetrocopIdleChatter, (void*)(TRAITOR_CHATTER_ASK_QUESTION), this);
+					m_nIdleChatterType = TRAITOR_CHATTER_ASK_QUESTION;
+				}
+			}
+			else
 			{
-				GetSquad()->BroadcastInteraction( g_interactionMetrocopIdleChatter, (void*)(METROPOLICE_CHATTER_ASK_QUESTION), this );
-				m_nIdleChatterType = METROPOLICE_CHATTER_ASK_QUESTION;
+				int nResponseType = m_nIdleChatterType - METROPOLICE_CHATTER_RESPONSE;
+
+				static const char *pResponse[2][METROPOLICE_CHATTER_RESPONSE_TYPE_COUNT] =
+				{
+					{ "METROPOLICE_IDLE_CLEAR", "METROPOLICE_IDLE_ANSWER" },
+					{ "METROPOLICE_IDLE_CLEAR_CR", "METROPOLICE_IDLE_ANSWER_CR" },
+				};
+
+				if (m_Sentences.Speak(pResponse[bIsCriminal][nResponseType]) >= 0)
+				{
+					GetSquad()->BroadcastInteraction(g_interactionMetrocopIdleChatter, (void*)(METROPOLICE_CHATTER_ASK_QUESTION), this);
+					m_nIdleChatterType = METROPOLICE_CHATTER_ASK_QUESTION;
+				}
 			}
 		}
 		break;
@@ -2669,12 +3063,26 @@ void CNPC_MetroPolice::PainSound( const CTakeDamageInfo &info )
 		if ( !HasMemory(bits_MEMORY_PAIN_HEAVY_SOUND) && (healthRatio < 0.25f) )
 		{
 			Remember( bits_MEMORY_PAIN_HEAVY_SOUND | bits_MEMORY_PAIN_LIGHT_SOUND );
-			pSentenceName = "METROPOLICE_PAIN_HEAVY";
+			if (m_bTraitorCops)
+			{
+				pSentenceName = "TRAITOR_PAIN_HEAVY";
+			}
+			else
+			{
+				pSentenceName = "METROPOLICE_PAIN_HEAVY";
+			}
 		}
 		else if ( !HasMemory(bits_MEMORY_PAIN_LIGHT_SOUND) && healthRatio > 0.8f )
 		{
 			Remember( bits_MEMORY_PAIN_LIGHT_SOUND );
-			pSentenceName = "METROPOLICE_PAIN_LIGHT";
+			if (m_bTraitorCops)
+			{
+				pSentenceName = "TRAITOR_PAIN_LIGHT";
+			}
+			else
+			{
+				pSentenceName = "METROPOLICE_PAIN_LIGHT";
+			}
 		}
 		
 		// This causes it to speak it no matter what; doesn't bother with setting sounds.
@@ -3359,7 +3767,14 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 	{
 		m_nRecentDamage = 0;
 		m_flRecentDamageTime = 0;
-		m_Sentences.Speak( "METROPOLICE_COVER_HEAVY_DAMAGE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL );
+		if (m_bTraitorCops)
+		{
+			m_Sentences.Speak("TRAITOR_COVER_HEAVY_DAMAGE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL);
+		}
+		else
+		{
+			m_Sentences.Speak("METROPOLICE_COVER_HEAVY_DAMAGE", SENTENCE_PRIORITY_MEDIUM, SENTENCE_CRITERIA_NORMAL);
+		}
 
 		return SCHED_TAKE_COVER_FROM_ENEMY;
 	}
@@ -3402,7 +3817,14 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 		CBaseEntity *pBlocker = GetEnemyOccluder();
 		if ( pBlocker && pBlocker->GetHealth() > 0 && OccupyStrategySlotRange( SQUAD_SLOT_POLICE_ATTACK_OCCLUDER1, SQUAD_SLOT_POLICE_ATTACK_OCCLUDER2 ) )
 		{
-			m_Sentences.Speak( "METROPOLICE_SHOOT_COVER" );
+			if (m_bTraitorCops)
+			{
+				m_Sentences.Speak("TRAITOR_SHOOT_COVER");
+			}
+			else
+			{
+				m_Sentences.Speak("METROPOLICE_SHOOT_COVER");
+			}
 			return SCHED_SHOOT_ENEMY_COVER;
 		}
 	}
@@ -4151,7 +4573,14 @@ int CNPC_MetroPolice::SelectSchedule( void )
 	{
 		if ( GetActiveWeapon() && (GetActiveWeapon()->m_iClip1 <= 5) )
 		{
-			m_Sentences.Speak( "METROPOLICE_COVER_LOW_AMMO" );
+			if (m_bTraitorCops)
+			{
+				m_Sentences.Speak("METROPOLICE_COVER_LOW_AMMO");
+			}
+			else
+			{
+				m_Sentences.Speak("METROPOLICE_COVER_LOW_AMMO");
+			}
 			return SCHED_HIDE_AND_RELOAD;
 		}
 	}
@@ -4442,8 +4871,14 @@ void CNPC_MetroPolice::StartTask( const Task_t *pTask )
 					TaskComplete();
 					break;
 				}
-
-				m_Sentences.Speak( "METROPOLICE_ACTIVATE_BATON", SENTENCE_PRIORITY_NORMAL, SENTENCE_CRITERIA_NORMAL );
+				if (m_bTraitorCops)
+				{
+					m_Sentences.Speak("TRAITOR_ACTIVATE_BATON", SENTENCE_PRIORITY_NORMAL, SENTENCE_CRITERIA_NORMAL);
+				}
+				else
+				{
+					m_Sentences.Speak("METROPOLICE_ACTIVATE_BATON", SENTENCE_PRIORITY_NORMAL, SENTENCE_CRITERIA_NORMAL);
+				}
 				SetIdealActivity( (Activity) ACT_ACTIVATE_BATON );
 			}
 			else
@@ -4453,8 +4888,14 @@ void CNPC_MetroPolice::StartTask( const Task_t *pTask )
 					TaskComplete();
 					break;
 				}
-
-				m_Sentences.Speak( "METROPOLICE_DEACTIVATE_BATON", SENTENCE_PRIORITY_NORMAL, SENTENCE_CRITERIA_NORMAL );
+				if (m_bTraitorCops)
+				{
+					m_Sentences.Speak("TRAITOR_DEACTIVATE_BATON", SENTENCE_PRIORITY_NORMAL, SENTENCE_CRITERIA_NORMAL);
+				}
+				else
+				{
+					m_Sentences.Speak("METROPOLICE_DEACTIVATE_BATON", SENTENCE_PRIORITY_NORMAL, SENTENCE_CRITERIA_NORMAL);
+				}
 				SetIdealActivity( (Activity) ACT_DEACTIVATE_BATON );
 			}
 		}
